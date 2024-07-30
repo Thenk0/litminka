@@ -8,6 +8,13 @@
                     options-dense
                     label="Озвучка" />
             </div>
+
+            <q-btn
+                @click="follow"
+                :color="isFollowed ? 'red-6' : 'green-6'"
+                v-if="userStore.isAuth">
+                {{ !isFollowed ? 'Подписаться' : 'Отписаться' }}
+            </q-btn>
         </div>
         <div class="row grid-container">
             <div v-for="i in [...Array(currentTranslation.value.currentEpisodes).keys()]" :key="i">
@@ -36,6 +43,7 @@ import { computed, ref, defineOptions, PropType } from 'vue';
 import { Anime } from '../models';
 import { onMounted } from 'vue';
 import { onUnmounted } from 'vue';
+import { useUserStore } from 'src/stores/user-store';
 
 defineOptions({
     name: 'KodikPlayer',
@@ -48,6 +56,8 @@ const props = defineProps({
         required: true,
     },
 });
+const emit = defineEmits(['follow']);
+const userStore = useUserStore();
 
 const kodikLink = computed(() => {
     return `${currentTranslation.value.value.link}?hide_selectors=true&episode=${currentEpisode.value}`;
@@ -63,11 +73,20 @@ const translations = computed(() => {
     });
 });
 
+const followedIds = computed(() => {
+    return props.anime.follows?.map((follow) => follow.translation.groupId) ?? [];
+});
+
 const currentTranslation = ref({
     label: props.anime.animeTranslations[0].group.name,
     value: props.anime.animeTranslations[0],
     description: props.anime.animeTranslations[0].group.type,
 });
+
+const isFollowed = computed(() => {
+    return followedIds.value.some((id) => id === currentTranslation.value.value.groupId);
+});
+
 const options = translations;
 
 const currentEpisode = ref(1);
@@ -84,6 +103,10 @@ function kodikListener(message: MessageEvent) {
             changeEpisode(message.data.value.episode);
         }
     }
+}
+
+function follow() {
+    emit('follow', currentTranslation.value.label);
 }
 
 onMounted(() => {

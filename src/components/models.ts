@@ -118,7 +118,7 @@ export interface Anime {
     genres: Genre[];
     animeTranslations: AnimeTranslation[];
     relations: AnimeRelation[];
-    follows?: Follow[];
+    follows?: FollowTranslation[];
     animeLists?: WatchList[];
 }
 
@@ -190,6 +190,16 @@ export interface Follow {
     translationId: number;
     userId: number;
 }
+export interface FollowTranslation extends Follow {
+    translation: {
+        id: number;
+        currentEpisodes: number;
+        groupId: number;
+        animeId: number;
+        link: string;
+    };
+}
+
 export interface WatchList {
     id: number;
     animeId: number;

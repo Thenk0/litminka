@@ -116,6 +116,7 @@
             </div>
         </div>
         <kodik-player
+            @follow="follow"
             v-if="animeStore.anime.animeTranslations.length > 0"
             :anime="animeStore.anime"></kodik-player>
         <div v-else>Пока нет возможности смотреть</div>
@@ -235,6 +236,19 @@ async function toggleFavorite() {
         color: 'info',
         position: 'bottom-right',
         message: 'Фаворит изменен',
+        timeout: 1500,
+    });
+}
+
+async function follow(group: string) {
+    await userStore.api.patch(`/anime/follow/${animeStore.anime.id}`, {
+        type: 'follow',
+        groupName: group,
+    });
+    $q.notify({
+        color: 'info',
+        position: 'bottom-right',
+        message: 'Подписка на аниме успешно оформлена',
         timeout: 1500,
     });
 }
