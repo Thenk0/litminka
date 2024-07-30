@@ -96,7 +96,7 @@ export interface Anime {
     image: string;
     name: string;
     description: string;
-    status: string;
+    status: AnimeStatuses;
     slug: string;
     currentEpisodes: number;
     englishName: string;

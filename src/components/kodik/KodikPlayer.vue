@@ -9,12 +9,10 @@
                     label="Озвучка" />
             </div>
 
-            <q-btn
-                @click="follow"
-                :color="isFollowed ? 'red-6' : 'green-6'"
-                v-if="userStore.isAuth">
-                {{ !isFollowed ? 'Подписаться' : 'Отписаться' }}
-            </q-btn>
+            <div v-if="userStore.isAuth">
+                <q-btn v-if="!isFollowed" @click="follow" color="green-6">Подписаться</q-btn>
+                <q-btn v-else @click="unfollow" color="red-6">Отписаться</q-btn>
+            </div>
         </div>
         <div class="row grid-container">
             <div v-for="i in [...Array(currentTranslation.value.currentEpisodes).keys()]" :key="i">
@@ -40,7 +38,7 @@
 
 <script setup lang="ts">
 import { computed, ref, defineOptions, PropType } from 'vue';
-import { Anime } from '../models';
+import { Anime, AnimeTranslation } from '../models';
 import { onMounted } from 'vue';
 import { onUnmounted } from 'vue';
 import { useUserStore } from 'src/stores/user-store';
@@ -56,7 +54,10 @@ const props = defineProps({
         required: true,
     },
 });
-const emit = defineEmits(['follow']);
+const emit = defineEmits<{
+    follow: [translation: AnimeTranslation];
+    unfollow: [translation: AnimeTranslation];
+}>();
 const userStore = useUserStore();
 
 const kodikLink = computed(() => {
@@ -106,7 +107,11 @@ function kodikListener(message: MessageEvent) {
 }
 
 function follow() {
-    emit('follow', currentTranslation.value.label);
+    emit('follow', currentTranslation.value.value);
+}
+
+function unfollow() {
+    emit('unfollow', currentTranslation.value.value);
 }
 
 onMounted(() => {

@@ -117,6 +117,7 @@
         </div>
         <kodik-player
             @follow="follow"
+            @unfollow="unfollow"
             v-if="animeStore.anime.animeTranslations.length > 0"
             :anime="animeStore.anime"></kodik-player>
         <div v-else>Пока нет возможности смотреть</div>
@@ -130,7 +131,13 @@ import { useAnimeStore } from 'src/stores/anime-store';
 import KodikPlayer from 'src/components/kodik/KodikPlayer.vue';
 import { useUserStore } from 'src/stores/user-store';
 import { useI18n } from 'vue-i18n';
-import { AnimeListStatuses, WatchList } from 'src/components/models';
+import {
+    AnimeListStatuses,
+    AnimeStatuses,
+    AnimeTranslation,
+    FollowTypes,
+    WatchList,
+} from 'src/components/models';
 import { useQuasar } from 'quasar';
 
 const { t } = useI18n();
@@ -240,15 +247,57 @@ async function toggleFavorite() {
     });
 }
 
-async function follow(group: string) {
-    await userStore.api.patch(`/anime/follow/${animeStore.anime.id}`, {
-        type: 'follow',
-        groupName: group,
+async function follow(translation: AnimeTranslation) {
+    if (animeStore.anime.status === AnimeStatuses.Released) {
+        // TODO: Throw Error here
+        return;
+    }
+
+    const followType: FollowTypes =
+        animeStore.anime.status === AnimeStatuses.Ongoing
+            ? FollowTypes.Follow
+            : FollowTypes.Announcement;
+
+    await userStore.api.post(`/anime/follow/${animeStore.anime.id}`, {
+        type: followType,
+        groupName: translation.group.name,
     });
+
+    animeStore.anime.follows?.push({
+        id: 0, // zero means we emulate the response
+        status: FollowTypes.Follow,
+        animeId: animeStore.anime.id,
+        translationId: translation.id,
+        translation: translation,
+        userId: userStore.user.id,
+    });
+
     $q.notify({
         color: 'info',
         position: 'bottom-right',
         message: 'Подписка на аниме успешно оформлена',
+        timeout: 1500,
+    });
+}
+
+async function unfollow(translation: AnimeTranslation) {
+    await userStore.api.delete(`/anime/follow/${animeStore.anime.id}`, {
+        data: {
+            groupName: translation.group.name,
+        },
+    });
+    const animeTranslation = animeStore.anime.follows?.find(
+        (anime) => anime.translation.groupId === translation.groupId,
+    );
+    if (typeof animeTranslation === 'undefined') return;
+    const index = animeStore.anime.follows?.indexOf(animeTranslation);
+    if (typeof index === 'undefined') return;
+    animeStore.anime.follows?.splice(index, 1);
+
+    $q.notify({
+        color: 'info',
+        position: 'bottom-right',
+        message: 'Вы отписались от аниме',
         timeout: 1500,
     });
 }
