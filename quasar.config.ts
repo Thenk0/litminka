@@ -94,6 +94,10 @@ export default configure((ctx) => {
         // Full list of options: https://v2.quasar.dev/quasar-cli-vite/quasar-config-js#devServer
         devServer: {
             open: true, // opens browser window automatically
+            hmr: {
+                host: '127.0.0.1',
+                protocol: 'ws'
+            },
         },
 
         // https://v2.quasar.dev/quasar-cli-vite/quasar-config-js#framework
