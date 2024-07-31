@@ -12,7 +12,6 @@ export const useWatchListStore = defineStore('watchList', {
         async getWatchList() {
             const response = await this.api.get('watch-list');
             this.watchList = response.data.body;
-            console.log(this.watchList.length);
         },
     },
 });

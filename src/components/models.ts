@@ -214,3 +214,21 @@ export interface WatchList {
 export interface WatchListWithAnime extends WatchList {
     anime: ShortAnime;
 }
+
+enum NotificationStatuses {
+    EpisodeRelease = 'episode_released',
+    FinalEpisodeReleased = 'final_episode_released',
+    AnimeReleased = 'anime_released'
+
+}
+
+export interface UserNotification {
+    id: number,
+    animeId: number,
+    status: NotificationStatuses,
+    userId: number,
+    episode: number,
+    groupId: number,
+    isRead: boolean,
+    createdAt: string
+}

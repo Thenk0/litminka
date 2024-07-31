@@ -29,4 +29,9 @@ export default {
         OVA: 'OVA',
         Movie: 'Movie',
     },
+    notificationStatuses: {
+        episode_released: 'Episode released',
+        final_episode_released: 'Final episode released',
+        anime_released: 'Anime released'
+    }
 };

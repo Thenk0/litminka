@@ -247,7 +247,7 @@ async function toggleFavorite() {
     });
 }
 
-async function follow(translation: AnimeTranslation) {
+async function follow(translation?: AnimeTranslation) {
     if (animeStore.anime.status === AnimeStatuses.Released) {
         // TODO: Throw Error here
         return;
@@ -260,16 +260,7 @@ async function follow(translation: AnimeTranslation) {
 
     await userStore.api.post(`/anime/follow/${animeStore.anime.id}`, {
         type: followType,
-        groupName: translation.group.name,
-    });
-
-    animeStore.anime.follows?.push({
-        id: 0, // zero means we emulate the response
-        status: FollowTypes.Follow,
-        animeId: animeStore.anime.id,
-        translationId: translation.id,
-        translation: translation,
-        userId: userStore.user.id,
+        groupName: translation?.group.name,
     });
 
     $q.notify({
@@ -278,17 +269,31 @@ async function follow(translation: AnimeTranslation) {
         message: 'Подписка на аниме успешно оформлена',
         timeout: 1500,
     });
+
+    if (animeStore.anime.status === AnimeStatuses.Announced) return;
+
+    animeStore.anime.follows?.push({
+        id: 0, // zero means we emulate the response
+        status: FollowTypes.Follow,
+        animeId: animeStore.anime.id,
+        translationId: translation!.id,
+        translation: translation!,
+        userId: userStore.user.id,
+    });
 }
 
-async function unfollow(translation: AnimeTranslation) {
+async function unfollow(translation?: AnimeTranslation) {
     await userStore.api.delete(`/anime/follow/${animeStore.anime.id}`, {
         data: {
-            groupName: translation.group.name,
+            groupName: translation?.group.name,
         },
     });
+    if (animeStore.anime.status === AnimeStatuses.Announced) return;
+
     const animeTranslation = animeStore.anime.follows?.find(
-        (anime) => anime.translation.groupId === translation.groupId,
+        (anime) => anime.translation.groupId === translation!.groupId,
     );
+
     if (typeof animeTranslation === 'undefined') return;
     const index = animeStore.anime.follows?.indexOf(animeTranslation);
     if (typeof index === 'undefined') return;

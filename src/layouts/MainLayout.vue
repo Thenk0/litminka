@@ -17,6 +17,15 @@
                     <div class="flex" v-if="store.isAuth">
                         <q-btn to="/anime/watch-list" stretch flat label="Список" />
                         <q-separator vertical inset />
+                        <q-btn to="/notifications" dense round flat icon="notifications">
+                            <q-badge
+                                v-if="userNotificationStore.unreadNotifications"
+                                color="red"
+                                floating
+                                transparent>
+                                {{ userNotificationStore.unreadNotifications }}
+                            </q-badge>
+                        </q-btn>
                         <q-btn to="/profile" flat stretch>Профиль: {{ store.user.name }}</q-btn>
                         <q-separator vertical inset />
                         <q-btn flat stretch @click="logout">Выйти</q-btn>
@@ -38,7 +47,9 @@
 
 <script setup lang="ts">
 import { Cookies, useQuasar } from 'quasar';
+import { useUserNotificationStore } from 'src/stores/user-notification-store';
 import { useUserStore } from 'src/stores/user-store';
+import { onMounted, onUnmounted } from 'vue';
 
 defineOptions({
     name: 'MainLayout',
@@ -60,8 +71,24 @@ defineOptions({
     },
 });
 
+let timer: NodeJS.Timeout;
+onMounted(() => {
+    if (timer) return;
+    timer = setInterval(() => {
+        if (!store.isAuth) return;
+        userNotificationStore.getUnreadNotificationsCount();
+    }, 30000);
+    if (!store.isAuth) return;
+    userNotificationStore.getUnreadNotificationsCount();
+});
+
+onUnmounted(() => {
+    clearInterval(timer);
+});
+
 const store = useUserStore();
 const $q = useQuasar();
+const userNotificationStore = useUserNotificationStore();
 
 function logout() {
     $q.cookies.remove('token');

@@ -5,7 +5,7 @@
                 flat
                 style="height: max-content"
                 class="table"
-                title="Список"
+                title="Уведомления"
                 :rows="watchListStore.watchList"
                 :columns="columns"
                 row-key="name"
@@ -56,7 +56,7 @@
 <script setup lang="ts">
 import { QTableColumn } from 'quasar';
 import { useWatchListStore } from 'src/stores/watch-list-store';
-import { onMounted, ref } from 'vue';
+import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 const { t } = useI18n();
@@ -82,9 +82,6 @@ const columns: QTableColumn[] = [
 
 const watchListStore = useWatchListStore();
 
-onMounted(() => {
-    console.log(watchListStore.watchList);
-});
 function deleteItem(id: number) {
     watchListStore.api.delete(`/watch-list/${id}`);
     watchListStore.watchList = watchListStore.watchList.filter((list) => list.animeId !== id);

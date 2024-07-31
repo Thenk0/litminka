@@ -44,4 +44,10 @@ export default {
         on_hold: 'На удержании',
         dropped: 'Дропнуто',
     },
+
+    notificationStatuses: {
+        episode_released: 'Вышла серия',
+        final_episode_released: 'Вышла последняя серия',
+        anime_released: 'Вышло аниме'
+    }
 };

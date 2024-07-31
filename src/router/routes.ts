@@ -42,6 +42,14 @@ const routes: RouteRecordRaw[] = [
             auth: true,
         },
     },
+    {
+        path: '/notifications',
+        component: () => import('layouts/MainLayout.vue'),
+        children: [{ path: '', component: () => import('pages/UserNotificationsPage.vue') }],
+        meta: {
+            auth: true,
+        },
+    },
 
     // Always leave this as last one,
     // but you can also remove it
