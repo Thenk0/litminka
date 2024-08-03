@@ -17,5 +17,40 @@ export const useUserStore = defineStore('user', {
             cookies.remove('refreshToken');
             this.$reset();
         },
+        async saveSettings() {
+            const {
+                notifyDiscord,
+                notifyPush,
+                notifyTelegram,
+                notifyVK,
+                shikimoriExportList,
+                showCensoredContent,
+                siteTheme,
+                watchListMode,
+                watchListAddAfterEpisodes,
+                watchListAskAboutRating,
+                watchListAutoAdd,
+                watchListIgnoreOptionForLessEpisodes,
+                watchListWatchedPercentage,
+                watchListUnsubAfterDrop,
+            } = this.user.settings;
+
+            this.api.patch('users/settings', {
+                notifyDiscord,
+                notifyPush,
+                notifyTelegram,
+                notifyVK,
+                shikimoriExportList,
+                showCensoredContent,
+                siteTheme,
+                watchListMode,
+                watchListAddAfterEpisodes,
+                watchListAskAboutRating,
+                watchListAutoAdd,
+                watchListIgnoreOptionForLessEpisodes,
+                watchListWatchedPercentage,
+                watchListUnsubAfterDrop,
+            });
+        }
     },
 });

@@ -13,7 +13,7 @@
                 filled
                 type="password"
                 v-model="password"
-                label="Your age *"
+                label="password"
                 lazy-rules
                 :rules="[(val) => (val && val.length > 0) || 'Please type something']" />
 

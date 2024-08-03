@@ -33,6 +33,9 @@
             :src="kodikLink"
             frameborder="0"
             allowfullscreen />
+        <div>Текущее время {{ episodeElapsed }}</div>
+        <div>Просмотрен после {{ watchedAfter }}</div>
+        <div>Длина серии {{ episodeLength }}</div>
     </div>
 </template>
 
@@ -57,6 +60,7 @@ const props = defineProps({
 const emit = defineEmits<{
     follow: [translation: AnimeTranslation];
     unfollow: [translation: AnimeTranslation];
+    episodeWatched: [episode: number];
 }>();
 const userStore = useUserStore();
 
@@ -73,9 +77,14 @@ const translations = computed(() => {
         };
     });
 });
+const options = translations;
 
 const followedIds = computed(() => {
     return props.anime.follows?.map((follow) => follow.translation.groupId) ?? [];
+});
+
+const isFollowed = computed(() => {
+    return followedIds.value.some((id) => id === currentTranslation.value.value.groupId);
 });
 
 const currentTranslation = ref({
@@ -83,15 +92,20 @@ const currentTranslation = ref({
     value: props.anime.animeTranslations[0],
     description: props.anime.animeTranslations[0].group.type,
 });
+const currentEpisode = ref(1);
+const episodeLength = ref(0);
+const episodeElapsed = ref(0);
+let notified = false;
 
-const isFollowed = computed(() => {
-    return followedIds.value.some((id) => id === currentTranslation.value.value.groupId);
+const watchedAfter = computed<number>(() => {
+    if (!userStore.isAuth) return Infinity;
+    const percent =
+        userStore.user.settings.watchListWatchedPercentage * (episodeLength.value / 100);
+    return percent;
 });
 
-const options = translations;
-
-const currentEpisode = ref(1);
 function changeEpisode(episode: number) {
+    notified = false;
     currentEpisode.value = episode;
 }
 
@@ -102,6 +116,16 @@ function kodikListener(message: MessageEvent) {
         // todo: fix continue button
         if (message.data.key === 'kodik_player_current_episode') {
             changeEpisode(message.data.value.episode);
+        }
+        if (message.data.key === 'kodik_player_duration_update') {
+            episodeLength.value = message.data.value;
+        }
+        if (message.data.key === 'kodik_player_time_update') {
+            episodeElapsed.value = message.data.value;
+            if (episodeElapsed.value >= watchedAfter.value && !notified) {
+                emit('episodeWatched', currentEpisode.value);
+                notified = true;
+            }
         }
     }
 }

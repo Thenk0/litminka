@@ -33,7 +33,7 @@
                     <div>Список</div>
                     <q-select
                         filled
-                        v-model="watchListStatus"
+                        v-model="listEntry.status"
                         emit-value
                         map-options
                         :options="watchListStatuses"
@@ -50,8 +50,20 @@
                     <q-input
                         :min="0"
                         :max="animeStore.anime.currentEpisodes"
-                        v-model="episodes"
+                        v-model="listEntry.watchedEpisodes"
                         type="number" />
+                    <div
+                        v-if="
+                            userStore.user.settings.watchListMode === 'auto' &&
+                            listEntry.status !== 'dropped' &&
+                            listEntry.id !== 0
+                        ">
+                        <q-btn
+                            style="background: #ff0080; color: white; width: 100%"
+                            @click="dropTitle">
+                            Дропнуть тайтл
+                        </q-btn>
+                    </div>
                     <q-btn @click="saveList">Сохранить</q-btn>
                 </div>
             </div>
@@ -118,6 +130,7 @@
         <kodik-player
             @follow="follow"
             @unfollow="unfollow"
+            @episode-watched="episodeWatched"
             v-if="animeStore.anime.animeTranslations.length > 0"
             :anime="animeStore.anime"></kodik-player>
         <div v-else>Пока нет возможности смотреть</div>
@@ -174,24 +187,30 @@ const watchListStatuses = ref(
     ),
 );
 
-let listEntry = ref<WatchList | undefined>(undefined);
+let listEntry = ref<WatchList>({
+    watchedEpisodes: 0,
+    isFavorite: false,
+    rating: 0,
+    status: AnimeListStatuses.on_hold,
+    animeId: animeStore.anime.id,
+    userId: userStore.user.id ?? 0,
+    shikimoriId: 0,
+    id: 0,
+});
 
 if (animeStore.anime.animeLists && animeStore.anime.animeLists.length > 0) {
     listEntry.value = animeStore.anime.animeLists[0];
 }
 
-const watchListStatus = ref(listEntry.value?.status ?? '');
-const episodes = ref(listEntry.value?.watchedEpisodes ?? 0);
-
 async function saveList() {
     const body = {
-        watchedEpisodes: episodes.value,
-        status: watchListStatus.value,
+        watchedEpisodes: listEntry.value?.watchedEpisodes ?? 0,
+        status: listEntry.value?.status ?? '',
         rating: 0,
         isFavorite: false,
     };
 
-    if (listEntry.value) {
+    if (listEntry.value.id !== 0) {
         userStore.api.patch(`/watch-list/${animeStore.anime.id}`, body);
         return;
     }
@@ -205,6 +224,13 @@ async function saveList() {
         message: 'Аниме добавлено в список',
         timeout: 1500,
     });
+}
+
+async function dropTitle() {
+    listEntry.value.status = AnimeListStatuses.dropped;
+    await saveList();
+    if (!userStore.user.settings.watchListUnsubAfterDrop) return;
+    await unfollow();
 }
 
 async function updateRating(value: number) {
@@ -285,10 +311,13 @@ async function follow(translation?: AnimeTranslation) {
 async function unfollow(translation?: AnimeTranslation) {
     await userStore.api.delete(`/anime/follow/${animeStore.anime.id}`, {
         data: {
-            groupName: translation?.group.name,
+            groupName: translation?.group.name ?? undefined,
         },
     });
-    if (animeStore.anime.status === AnimeStatuses.Announced) return;
+    if (animeStore.anime.status === AnimeStatuses.Announced || typeof translation === 'undefined') {
+        animeStore.anime.follows = [];
+        return;
+    }
 
     const animeTranslation = animeStore.anime.follows?.find(
         (anime) => anime.translation.groupId === translation!.groupId,
@@ -304,6 +333,61 @@ async function unfollow(translation?: AnimeTranslation) {
         position: 'bottom-right',
         message: 'Вы отписались от аниме',
         timeout: 1500,
+    });
+}
+
+async function episodeWatched(episode: number) {
+    episode = episode > 0 ? episode : 1;
+    if (!userStore.isAuth) return;
+
+    const list = listEntry.value;
+    const isInList: boolean = listEntry.value.id !== 0;
+
+    const body = {
+        watchedEpisodes: episode,
+        status: '',
+        rating: list?.rating ?? 0,
+        isFavorite: list?.isFavorite ?? false,
+    };
+    const userSettings = userStore.user.settings;
+    if (!isInList && !userSettings.watchListAutoAdd) return;
+
+    if (episode < userSettings.watchListAddAfterEpisodes) {
+        if (animeStore.anime.maxEpisodes > userSettings.watchListAddAfterEpisodes) return;
+        if (!userSettings.watchListIgnoreOptionForLessEpisodes) return;
+    }
+
+    body.status = AnimeListStatuses.watching;
+
+    if (
+        list?.status === AnimeListStatuses.completed ||
+        list?.status === AnimeListStatuses.rewatching
+    ) {
+        body.status = AnimeListStatuses.rewatching;
+    }
+
+    if (episode >= animeStore.anime.maxEpisodes) {
+        body.status = AnimeListStatuses.completed;
+    }
+
+    if (isInList) {
+        const response = await userStore.api.patch(`/watch-list/${animeStore.anime.id}`, body);
+        listEntry.value = response.data.body as WatchList;
+        $q.notify({
+            color: 'info',
+            position: 'bottom-right',
+            message: `Авто список: Аниме обновлено, Статус: ${body.status}, Серия ${body.watchedEpisodes}`,
+        });
+        return;
+    }
+
+    const response = await userStore.api.post(`/watch-list/${animeStore.anime.id}`, body);
+
+    listEntry.value = response.data.body as WatchList;
+    $q.notify({
+        color: 'info',
+        position: 'bottom-right',
+        message: `Авто список: Аниме добавлено, Статус: ${body.status}, Серия ${body.watchedEpisodes}`,
     });
 }
 </script>

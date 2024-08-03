@@ -157,6 +157,49 @@ export interface User {
     createdAt: string;
     roleId: number;
     role: Role;
+    settings: Settings,
+    integration: Integration
+}
+
+export interface Settings {
+    id: number,
+    watchListMode: WatchListMode,
+    watchListAddAfterEpisodes: number,
+    watchListAskAboutRating: boolean,
+    watchListIgnoreOptionForLessEpisodes: boolean,
+    watchListAutoAdd: boolean
+    watchListWatchedPercentage: number,
+    watchListUnsubAfterDrop: boolean,
+    showCensoredContent: boolean,
+    notifyDiscord: boolean,
+    notifyPush: boolean,
+    notifyTelegram: boolean,
+    notifyVK: boolean,
+    siteTheme: SiteTheme,
+    userId: number,
+    shikimoriExportList: boolean
+}
+
+export interface Integration {
+    discordId?: number,
+    id: number,
+    shikimoriCanChangeList: boolean,
+    shikimoriId?: number,
+    telegramId?: number,
+    vkId?: number,
+    userId: 1
+}
+
+
+export enum WatchListMode {
+    Manual = 'manual',
+    Auto = 'auto',
+}
+
+export enum SiteTheme {
+    Light = 'light',
+    Dark = 'dark',
+    System = 'system'
 }
 
 export interface Role {
