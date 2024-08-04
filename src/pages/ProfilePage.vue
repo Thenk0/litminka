@@ -38,7 +38,10 @@
                     type="number"
                     v-model="store.user.settings.watchListWatchedPercentage"
                     label="Через какой процент времени, серия считается просмотренной" />
-                <span>Серия будет считаться просмотренной после {{ minutesExample }} минут.</span>
+                <span>
+                    При длине серии в 24 минуты она будет считаться просмотренной после
+                    {{ minutesExample }} минут.
+                </span>
                 <div>
                     <q-checkbox
                         v-model="store.user.settings.watchListUnsubAfterDrop"

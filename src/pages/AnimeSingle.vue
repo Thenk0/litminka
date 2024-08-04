@@ -150,6 +150,7 @@ import {
     AnimeTranslation,
     FollowTypes,
     WatchList,
+    WatchListMode,
 } from 'src/components/models';
 import { useQuasar } from 'quasar';
 
@@ -338,7 +339,7 @@ async function unfollow(translation?: AnimeTranslation) {
 
 async function episodeWatched(episode: number) {
     episode = episode > 0 ? episode : 1;
-    if (!userStore.isAuth) return;
+    if (!userStore.isAuth || userStore.user.settings.watchListMode !== WatchListMode.Auto) return;
 
     const list = listEntry.value;
     const isInList: boolean = listEntry.value.id !== 0;
@@ -346,8 +347,8 @@ async function episodeWatched(episode: number) {
     const body = {
         watchedEpisodes: episode,
         status: '',
-        rating: list?.rating ?? 0,
-        isFavorite: list?.isFavorite ?? false,
+        rating: list.rating,
+        isFavorite: list.isFavorite,
     };
     const userSettings = userStore.user.settings;
     if (!isInList && !userSettings.watchListAutoAdd) return;
@@ -360,8 +361,8 @@ async function episodeWatched(episode: number) {
     body.status = AnimeListStatuses.watching;
 
     if (
-        list?.status === AnimeListStatuses.completed ||
-        list?.status === AnimeListStatuses.rewatching
+        list.status === AnimeListStatuses.completed ||
+        list.status === AnimeListStatuses.rewatching
     ) {
         body.status = AnimeListStatuses.rewatching;
     }
