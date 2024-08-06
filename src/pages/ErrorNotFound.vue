@@ -3,7 +3,7 @@
         <div>
             <div style="font-size: 30vh">404</div>
 
-            <img src="/images/load.gif" />
+            <img src="/images/load_black.gif" />
             <div class="text-h4" style="opacity: 0.8">Ищу то, не знаю что</div>
 
             <q-btn

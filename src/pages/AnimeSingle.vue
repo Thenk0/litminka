@@ -17,7 +17,7 @@
                     <q-rating
                         :model-value="animeStore.anime.shikimoriRating"
                         @update:model-value="updateRating"
-                        :readonly="typeof listEntry === 'undefined'"
+                        :readonly="listEntry.id !== 0"
                         size="sm"
                         :max="10"
                         color="primary"
@@ -26,32 +26,34 @@
                         icon-half="star_half" />
                     <span>
                         {{ animeStore.anime.shikimoriRating }}
-                        <span v-if="listEntry?.rating">({{ listEntry.rating }})</span>
+                        <span v-if="listEntry.rating">({{ listEntry.rating }})</span>
                     </span>
                 </div>
                 <div v-if="userStore.isAuth">
                     <div>Список</div>
-                    <q-select
-                        filled
-                        v-model="listEntry.status"
-                        emit-value
-                        map-options
-                        :options="watchListStatuses"
-                        label="Статус"
-                        style="width: 250px">
-                        <template v-slot:option="{ itemProps, opt }">
-                            <q-item v-bind="itemProps">
-                                <q-item-section>
-                                    <q-item-label>{{ opt.label }}</q-item-label>
-                                </q-item-section>
-                            </q-item>
-                        </template>
-                    </q-select>
-                    <q-input
-                        :min="0"
-                        :max="animeStore.anime.currentEpisodes"
-                        v-model="listEntry.watchedEpisodes"
-                        type="number" />
+                    <div style="display: flex">
+                        <q-select
+                            filled
+                            v-model="listEntry.status"
+                            emit-value
+                            map-options
+                            :options="watchListStatuses"
+                            label="Статус"
+                            style="width: 250px">
+                            <template v-slot:option="{ itemProps, opt }">
+                                <q-item v-bind="itemProps">
+                                    <q-item-section>
+                                        <q-item-label>{{ opt.label }}</q-item-label>
+                                    </q-item-section>
+                                </q-item>
+                            </template>
+                        </q-select>
+                        <q-input
+                            :min="0"
+                            :max="animeStore.anime.currentEpisodes"
+                            v-model="listEntry.watchedEpisodes"
+                            type="number" />
+                    </div>
                     <div
                         v-if="
                             userStore.user.settings.watchListMode === 'auto' &&
@@ -86,6 +88,7 @@
                                 :key="genre.id"
                                 color="blue">
                                 <router-link
+                                    style="color: white; text-decoration: none"
                                     :to="{
                                         path: '/anime/search',
                                         query: { includeGenres: genre.id },
@@ -149,6 +152,7 @@ import {
     AnimeStatuses,
     AnimeTranslation,
     FollowTypes,
+    Optional,
     WatchList,
     WatchListMode,
 } from 'src/components/models';
@@ -188,11 +192,11 @@ const watchListStatuses = ref(
     ),
 );
 
-let listEntry = ref<WatchList>({
+const listEntry = ref<Optional<WatchList, 'status'>>({
     watchedEpisodes: 0,
     isFavorite: false,
     rating: 0,
-    status: AnimeListStatuses.on_hold,
+    status: undefined,
     animeId: animeStore.anime.id,
     userId: userStore.user.id ?? 0,
     shikimoriId: 0,

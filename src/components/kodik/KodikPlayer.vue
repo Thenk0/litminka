@@ -71,7 +71,7 @@ const kodikLink = computed(() => {
 const translations = computed(() => {
     return props.anime.animeTranslations.map((translation) => {
         return {
-            label: translation.group.name,
+            label: `(${translation.currentEpisodes}) ${translation.group.name} `,
             value: translation,
             description: translation.group.type,
         };
@@ -88,7 +88,7 @@ const isFollowed = computed(() => {
 });
 
 const currentTranslation = ref({
-    label: props.anime.animeTranslations[0].group.name,
+    label: `(${props.anime.animeTranslations[0].currentEpisodes}) ${props.anime.animeTranslations[0].group.name}`,
     value: props.anime.animeTranslations[0],
     description: props.anime.animeTranslations[0].group.type,
 });

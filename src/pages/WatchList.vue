@@ -1,65 +1,79 @@
 <template>
     <q-page padding>
         <div class="q-pa-md">
-            <q-table
-                flat
-                style="height: max-content"
-                class="table"
-                title="Уведомления"
-                :rows="watchListStore.watchList"
-                :columns="columns"
-                row-key="name"
-                virtual-scroll
-                hide-bottom
-                v-model:pagination="pagination"
-                :rows-per-page-options="[0]">
-                <template v-slot:body="props">
-                    <q-tr :props="props">
-                        <q-td key="index" :props="props">
-                            {{ props.row.anime.id }}
-                        </q-td>
-                        <q-td key="name" :props="props">
-                            <router-link :to="{ path: `/anime/${props.row.anime.slug}` }">
-                                {{ props.row.anime.name }}
-                            </router-link>
-                        </q-td>
-                        <q-td key="status" :props="props">
-                            {{ t(`animeListStatuses.${props.row.status}`) }}
-                        </q-td>
-                        <q-td key="rating" :props="props">
-                            {{ props.row.rating }}
-                        </q-td>
-                        <q-td key="episodes" :props="props">
-                            <span>{{ props.row.watchedEpisodes }}</span>
-                            <span>/</span>
-                            <span v-if="props.row.anime.maxEpisodes">
-                                {{ props.row.anime.maxEpisodes }}
-                            </span>
-                            <span v-else>?</span>
-                        </q-td>
-                        <q-td key="type" :props="props">
-                            {{ t(`mediaTypes.${props.row.anime.mediaType}`) }}
-                        </q-td>
-                        <q-td key="favorite" :props="props">
-                            <q-checkbox v-model="props.row.isFavorite" disable color="teal" />
-                        </q-td>
-                        <q-td key="favorite" :props="props">
-                            <q-btn @click="deleteItem(props.row.anime.id)" color="red">X</q-btn>
-                        </q-td>
-                    </q-tr>
+            <div class="flex flex-end"></div>
+            <div class="flex flex-center">
+                <q-checkbox
+                    v-model="selected"
+                    :val="AnimeListStatuses.planned"
+                    label="Запланированы"
+                    color="teal" />
+                <q-checkbox
+                    v-model="selected"
+                    :val="AnimeListStatuses.watching"
+                    label="Смотрю"
+                    color="teal" />
+                <q-checkbox
+                    v-model="selected"
+                    :val="AnimeListStatuses.completed"
+                    label="Просмотрено"
+                    color="teal" />
+                <q-checkbox
+                    v-model="selected"
+                    :val="AnimeListStatuses.rewatching"
+                    label="Пересматриваю"
+                    color="teal" />
+                <q-checkbox
+                    v-model="selected"
+                    :val="AnimeListStatuses.dropped"
+                    label="Дропнуты"
+                    color="teal" />
+                <q-checkbox
+                    v-model="selected"
+                    :val="AnimeListStatuses.on_hold"
+                    label="На удержании"
+                    color="teal" />
+                <div class="flex">
+                    <q-btn
+                        class="block"
+                        @click="setDisplayType('row')"
+                        :color="displayType === 'row' ? 'primary' : undefined"
+                        icon="view_list" />
+                    <q-btn
+                        class="block"
+                        @click="setDisplayType('grid')"
+                        :color="displayType === 'grid' ? 'primary' : undefined"
+                        icon="grid_view" />
+                </div>
+            </div>
+            <q-infinite-scroll
+                style="width: 75%; margin: 0 auto"
+                ref="infScroll"
+                @load="loadList"
+                :offset="250"
+                :class="{ grid: displayType === 'grid', flex: displayType === 'row' }">
+                <watch-list-entry
+                    @delete="deleteItem"
+                    v-for="entry in watchListStore.watchList"
+                    :key="entry.id"
+                    :entry="entry"
+                    :type="displayType" />
+                <template v-slot:loading>
+                    <div class="row justify-center q-my-md">
+                        <q-spinner-dots color="primary" size="40px" />
+                    </div>
                 </template>
-            </q-table>
+            </q-infinite-scroll>
         </div>
     </q-page>
 </template>
 
 <script setup lang="ts">
-import { QTableColumn } from 'quasar';
+import { QInfiniteScroll } from 'quasar';
+import { AnimeListStatuses } from 'src/components/models';
+import WatchListEntry from 'src/components/watch-list/WatchListEntry.vue';
 import { useWatchListStore } from 'src/stores/watch-list-store';
-import { ref } from 'vue';
-import { useI18n } from 'vue-i18n';
-
-const { t } = useI18n();
+import { ref, watch } from 'vue';
 
 defineOptions({
     name: 'WatchList',
@@ -68,19 +82,33 @@ defineOptions({
         await $store.getWatchList();
     },
 });
-const pagination = ref({ rowsPerPage: 0 });
-const columns: QTableColumn[] = [
-    { name: 'index', label: '#', field: 'index' },
-    { name: 'name', label: 'Название', field: 'name', align: 'left' },
-    { name: 'status', label: 'Статус', field: 'status' },
-    { name: 'rating', label: 'Оценка', field: 'rating' },
-    { name: 'episodes', label: 'Эпизоды', field: 'episodes' },
-    { name: 'type', label: 'Тип', field: 'type' },
-    { name: 'favorite', label: 'В избранном', field: 'favorite' },
-    { name: 'actions', label: 'Действия', field: 'actions' },
-];
 
 const watchListStore = useWatchListStore();
+
+const infScroll = ref<QInfiniteScroll>();
+const selected = ref<AnimeListStatuses[]>([]);
+
+const displayType = ref('grid');
+
+function setDisplayType(type: string) {
+    displayType.value = type;
+}
+
+watch(
+    selected,
+    async () => {
+        if (typeof infScroll.value === 'undefined') return;
+        await watchListStore.getWatchList(selected.value);
+        infScroll.value.reset();
+    },
+    { deep: true },
+);
+
+async function loadList(index: number, done: (stop: boolean) => void) {
+    await watchListStore.appendWatchList(index + 1, selected.value);
+    const isFinished = watchListStore.listCount === watchListStore.watchList.length;
+    done(isFinished);
+}
 
 function deleteItem(id: number) {
     watchListStore.api.delete(`/watch-list/${id}`);
@@ -88,4 +116,17 @@ function deleteItem(id: number) {
 }
 </script>
 
-<style scoped lang="scss"></style>
+<style scoped lang="scss">
+.grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 2em;
+}
+.flex {
+    display: flex;
+}
+
+.block {
+    display: block;
+}
+</style>

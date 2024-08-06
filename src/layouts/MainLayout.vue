@@ -35,7 +35,6 @@
                         <q-separator vertical inset />
                     </div>
                 </div>
-                <div>Quasar v{{ $q.version }}</div>
             </q-toolbar>
         </q-header>
 
